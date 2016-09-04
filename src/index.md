@@ -1,10 +1,10 @@
 # DRAFTDRAFTDRAFTDRAFT
 
-__Meepen's Guide to Garry's Mod's Lua API__
+__Meepen's Guide to Garry's Mod's Lua API__  
 *Because Lixquid triggered me*
 
 
-Sections
+Sections  
 Section 0 - \`The Point\`
 -  0.0 - \`What is this?\`
 -  0.1 - \`Resources\`
