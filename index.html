@@ -10,12 +10,12 @@
   </head>
   <body>
     <article class="markdown-body"><h1 id="draftdraftdraftdraft"><a class="header-link" href="#draftdraftdraftdraft"></a>DRAFTDRAFTDRAFTDRAFT</h1>
-<p>Meepen&#39;s Guide to Garry&#39;s Mod&#39;s lua API
-put something here to entice people to read</p>
+<p><strong>Meepen&#39;s Guide to Garry&#39;s Mod&#39;s Lua API</strong>
+<em>Because Lixquid triggered me</em></p>
 <p>Sections
 Section 0 - `The Point`</p>
 <ul class="list">
-<li>0.0 - `Introduction`</li>
+<li>0.0 - `What is this?`</li>
 <li>0.1 - `Resources`</li>
 </ul>
 <p>Section 1 - `Introductions`</p>
@@ -37,13 +37,25 @@ Section 0 - `The Point`</p>
 <h4 id="1-1-the-hook-library"><a class="header-link" href="#1-1-the-hook-library"></a>1.1 - The hook library</h4>
 <hr>
 <p>The hook library is one of the most powerful tools in Garry&#39;s Mod. You can debug with it, modify what happens, setup later code, or even reset your own code.</p>
-<h5 id="adding-hooks"><a class="header-link" href="#adding-hooks"></a>Adding hooks</h5>
+<h5 id="how-hooks-work-internally-"><a class="header-link" href="#how-hooks-work-internally-"></a>How hooks work (internally)</h5>
+<p>Internally hooks work pretty simplistically. Here&#39;s a mockup of the hook.Call function</p>
+<pre class="hljs"><code><span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">hook.Call</span><span class="hljs-params">(event_name, ...)</span></span>
+    <span class="hljs-keyword">for</span> k,v <span class="hljs-keyword">in</span> <span class="hljs-built_in">pairs</span>(hook.GetTable()[event_name] <span class="hljs-keyword">or</span> {}) <span class="hljs-keyword">do</span>
+        <span class="hljs-keyword">local</span> r = v(...)
+        <span class="hljs-keyword">if</span> (r ~= <span class="hljs-keyword">nil</span>) <span class="hljs-keyword">then</span>
+        <span class="hljs-keyword">return</span> r
+    <span class="hljs-keyword">end</span>
+    <span class="hljs-keyword">return</span> (gmod.GetGamemode()[event_name] <span class="hljs-keyword">or</span> no_operation)(...)
+<span class="hljs-keyword">end</span></code></pre><h5 id="adding-hooks"><a class="header-link" href="#adding-hooks"></a>Adding hooks</h5>
 <p>The function in the <code>hook</code> library that will be used most often is <code>hook.Add</code>. This function adds another function to be called when a specific event is fired. An example use-case is for logging when a player has died:</p>
 <pre class="hljs"><code>hook.Add(<span class="hljs-string">"PlayerDeath"</span>, <span class="hljs-string">"print when a player dies"</span>, <span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">(victim, inflictor, attacker)</span></span>
     <span class="hljs-built_in">print</span>(victim:Nick()..<span class="hljs-string">" has died!"</span>)
 <span class="hljs-keyword">end</span>)</code></pre><p>This example adds a function to be executed when <code>PlayerDeath</code> has been fired under the identifier <code>print when a player dies</code>. When the event has been fired it will print <code>$victimname has died!</code> to the console.</p>
+<p>The return value in events are extremely important. If a hook returns any non-nil value it will stop the hooks that it hasn&#39;t run from running altogether. Only return a value when you are absolutely sure you want to do this.</p>
 <h5 id="removing-hooks"><a class="header-link" href="#removing-hooks"></a>Removing hooks</h5>
-<p>When a hook will not be needed any longer (such as unloading an addon), it should be removed with <code>hook.Remove</code>.</p>
+<p>When a hook will not be needed any longer (such as unloading an addon), it should be removed with <code>hook.Remove</code>. It&#39;s fairly simple to use this - you use the first two arguments passed to <code>hook.Add</code> and pass them to <code>hook.Remove</code>.</p>
+<pre class="hljs"><code>hook.Remove(<span class="hljs-string">"PlayerDeath"</span>, <span class="hljs-string">"print when a player dies"</span>)</code></pre><h5 id="finding-hooks"><a class="header-link" href="#finding-hooks"></a>Finding hooks</h5>
+<p>Finding hooks is essential to debugging, you can find why a hook won&#39;t run by looking at the source of the other hooks in the same event. Sometimes you may even use it to detour some of the hooks in an event to easily get your code to do something the way you want.</p>
 <h5 id="references"><a class="header-link" href="#references"></a>References</h5>
 <hr>
 <ol class="list">
