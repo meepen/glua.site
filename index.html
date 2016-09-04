@@ -19,7 +19,9 @@
 <p>Section 1 - `Introductions`</p>
 <ul class="list">
 <li>1.0 - `Introduction to basic Garry&#39;s Mod Lua`</li>
-<li>1.1 - `The hook library`  </li>
+<li>1.1 - `The hook library`</li>
+<li>1.2 - `Server and Client`</li>
+<li>1.3 - `Networking`</li>
 </ul>
 <h4 id="0-0-introduction"><a class="header-link" href="#0-0-introduction"></a>0.0 - Introduction</h4>
 <hr>
@@ -31,7 +33,7 @@
 <hr>
 <p>In GLua, developers will most likely be using hooks to run code. Hooks are one of the most essential part of Garry&#39;s Mod&#39;s API, as they can be used to do many things revolving around specific events. The usual hooks that will be used are going to be GAMEMODE hooks since they are a crucial part of the game experience in every gamemode. There will be many places where developers will need gamemode-specific hooks - such as sandbox&#39;s <code>CanTool</code> hook for suppressing specific tools for some user groups. </p>
 <p>However there are other ways to run code other than hooks; console commands, and file loads are also important places where code will run. Console commands will mostly be used for debugging and configs and file loading will be important to setting up the rest of the code.</p>
-<p>When none of these situation can solve a problem, detouring comes into play. Detouring is a powerful, but should be the last resort for any situation.</p>
+<p>When none of these situation can solve a problem, detouring comes into play. Detouring is powerful, but should be the last resort for any situation.</p>
 <h4 id="1-1-the-hook-library"><a class="header-link" href="#1-1-the-hook-library"></a>1.1 - The hook library</h4>
 <hr>
 <p>The hook library is one of the most powerful tools in Garry&#39;s Mod. You can debug with it, modify what happens, setup later code, or even reset your own code.</p>
@@ -53,7 +55,47 @@
 <h5 id="removing-hooks"><a class="header-link" href="#removing-hooks"></a>Removing hooks</h5>
 <p>When a hook will not be needed any longer (such as unloading an addon), it should be removed with <code>hook.Remove</code>. It&#39;s fairly simple to use this - you use the first two arguments passed to <code>hook.Add</code> and pass them to <code>hook.Remove</code>.</p>
 <pre class="hljs"><code>hook.Remove(<span class="hljs-string">"PlayerDeath"</span>, <span class="hljs-string">"print when a player dies"</span>)</code></pre><h5 id="finding-hooks"><a class="header-link" href="#finding-hooks"></a>Finding hooks</h5>
-<p>Finding hooks is essential to debugging, you can find why a hook won&#39;t run by looking at the source of the other hooks in the same event. Sometimes you may even use it to detour some of the hooks in an event to easily get your code to do something the way you want.</p>
+<p>Finding hooks is essential to debugging, you can find why a hook won&#39;t run by looking at the source of the other hooks in the same event. Sometimes you may even use it to detour some of the hooks in an event to easily get your code to do something the way you want. <code>hook.GetTable()</code> returns a table with structure like:</p>
+<pre class="hljs"><code>{
+    PlayerDeath = {
+        [<span class="hljs-string">"print when a player dies"</span>] = <span class="hljs-function"><span class="hljs-keyword">function</span>: 0<span class="hljs-title">x178c870</span>
+    }
+}</span></code></pre><h4 id="1-2-server-and-client"><a class="header-link" href="#1-2-server-and-client"></a>1.2 - Server and Client</h4>
+<hr>
+<p>There are two states that developers will need to be aware of. Server state is the state that is only on the server. The code that is run on the server is only available on the server, along with all the variable that it creates. On the other side there is the client state, which is only available on the client.</p>
+<p>There are events that are only ran in one state, and some hooks that are ran in both states. For events that are only ran on the server but you need to do something on the client when it happens you will need to network some data. Read the `Networking` section for more information.</p>
+<h5 id="server-and-client-variables"><a class="header-link" href="#server-and-client-variables"></a>SERVER and CLIENT variables</h5>
+<p>This is fairly straight forward. <code>SERVER</code> is a global variable that will be set to <code>true</code> on server and <code>false</code> on client. Likewise <code>CLIENT</code> is a global variable that will be set to <code>false</code> on server and <code>true</code> on client.</p>
+<h5 id="the-shared-pseudo-state"><a class="header-link" href="#the-shared-pseudo-state"></a>The shared pseudo-state</h5>
+<p>Shared is when a file is ran on both client and server. This happens when you include it on server and network it to the clients with <code>AddCSLuaFile</code> and making the client state include it as well.</p>
+<pre class="hljs"><code>concommand.Add(<span class="hljs-string">"dosomething_"</span>..(SERVER <span class="hljs-keyword">and</span> <span class="hljs-string">"sv"</span> <span class="hljs-keyword">or</span> <span class="hljs-string">"cl"</span>), <span class="hljs-built_in">print</span>)</code></pre><h5 id="prediction"><a class="header-link" href="#prediction"></a>Prediction</h5>
+<p>As mentioned above, there are some events that are ran on both server and client. Some of these events are predicted, meaning that the client predicts what will happen on the server state and mimics it on the client state for seamless gameplay. This happens because it helps reduce the effects of ping when playing the game.<br>For example, the <code>VehicleMove</code> hook is ran on client when in a vehicle, and on server when any client is in a vehicle. In these hooks you will want to avoid using any non-predicted variables in predicted hooks such as these, as it will cause prediction errors.<br>What not to do:</p>
+<pre class="hljs"><code><span class="hljs-keyword">local</span> waittime = <span class="hljs-number">3.5</span>
+hook.Add(<span class="hljs-string">"VehicleMove"</span>, <span class="hljs-string">"limit jumping"</span>, <span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">(ply, mv)</span></span>
+    ply.LastJump = ply.LastJump <span class="hljs-keyword">or</span> CurTime() - waittime
+    <span class="hljs-keyword">local</span> hit_jump = <span class="hljs-keyword">not</span> mv:WasKeyDown(IN_JUMP) <span class="hljs-keyword">and</span> mv:KeyDown(IN_JUMP)
+    <span class="hljs-keyword">if</span> (hit_jump <span class="hljs-keyword">and</span> CurTime() - ply.LastJump &lt; waittime) <span class="hljs-keyword">then</span>
+        mv:SetButtons(bit.band(bit.bnot(IN_JUMP), mv:GetButtons()))
+    <span class="hljs-keyword">elseif</span> (hit_jump) <span class="hljs-keyword">then</span>
+        ply.LastJump = CurTime()
+    <span class="hljs-keyword">end</span>
+<span class="hljs-keyword">end</span>)</code></pre><p>What to do:</p>
+<pre class="hljs"><code>AddCSLuaFile() <span class="hljs-comment">-- have it on client and server for prediction!</span>
+<span class="hljs-keyword">local</span> waittime = <span class="hljs-number">3.5</span>
+hook.Add(<span class="hljs-string">"VehicleMove"</span>, <span class="hljs-string">"limit jumping"</span>, <span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">(ply, mv)</span></span>
+    <span class="hljs-keyword">local</span> LastJump = ply:GetNW2Float(<span class="hljs-string">"LastJump"</span>, CurTime() - <span class="hljs-number">3.5</span>) 
+    <span class="hljs-comment">-- predicted network variable</span>
+    <span class="hljs-comment">-- it's not documented since it will eventually replace GetNW*</span>
+    <span class="hljs-comment">-- default to CurTime() - 3.5</span>
+
+    <span class="hljs-keyword">local</span> hit_jump = <span class="hljs-keyword">not</span> mv:WasKeyDown(IN_JUMP) <span class="hljs-keyword">and</span> mv:KeyDown(IN_JUMP)
+    <span class="hljs-keyword">if</span> (hit_jump <span class="hljs-keyword">and</span> CurTime() - LastJump &lt; waittime) <span class="hljs-keyword">then</span>
+        mv:SetButtons(bit.band(bit.bnot(IN_JUMP), mv:GetButtons()))
+    <span class="hljs-keyword">elseif</span> (hit_jump) <span class="hljs-keyword">then</span>
+        ply:SetNW2Float(<span class="hljs-string">"LastJump"</span>, CurTime())
+    <span class="hljs-keyword">end</span>
+<span class="hljs-keyword">end</span>)</code></pre><h4 id="1-3-networking"><a class="header-link" href="#1-3-networking"></a>1.3 - Networking</h4>
+<hr>
 <h5 id="references"><a class="header-link" href="#references"></a>References</h5>
 <hr>
 <ol class="list">
