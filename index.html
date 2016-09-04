@@ -1,0 +1,53 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, minimal-ui">
+    <title>0.0 - Introduction</title>
+    <link type="text/css" rel="stylesheet" href="assets/css/github-markdown.css">
+    <link type="text/css" rel="stylesheet" href="assets/css/pilcrow.css">
+    <link type="text/css" rel="stylesheet" href="assets/css/hljs-github.min.css"/>
+  </head>
+  <body>
+    <article class="markdown-body"><p>Meepen&#39;s Guide to Garry&#39;s Mod&#39;s lua API
+put something here to entice people to read</p>
+<p>Sections
+Section 0 - `The Point`</p>
+<ul class="list">
+<li>0.0 - `Introduction`</li>
+<li>0.1 - `Resources`</li>
+</ul>
+<p>Section 1 - `Introductions`</p>
+<ul class="list">
+<li>1.0 - `Introduction to basic Garry&#39;s Mod Lua`</li>
+<li>1.1 - `The hook library`  </li>
+</ul>
+<h4 id="0-0-introduction"><a class="header-link" href="#0-0-introduction"></a>0.0 - Introduction</h4>
+<hr>
+<p>In Garry&#39;s Mod, developers use an extended lua api with the LuaJit implementation of the language. The extended lua api contains interactive functions for Source Engine&#39;s internal code; if one is familiar with Source Engine&#39;s code they should be able to get into Garry&#39;s Mod Lua (GLua) fairly easily. This &quot;book&quot; aims to cover the fundamentals of Garry&#39;s Mod developing.</p>
+<h4 id="0-1-resources"><a class="header-link" href="#0-1-resources"></a>0.1 - Resources</h4>
+<hr>
+<p>Developers will need to interact with Source Engine in their code like drawing on the client&#39;s screen, creating console variables or even running something when a player writes in chat. For these types of things one will need to find a way to do it in Garry&#39;s Mod&#39;s lua api. The best place to find documentation for specific GLua functions is the Garry&#39;s Mod official wiki[1]. For stuff such as manipulating variables or function usage, look for a basic lua resource to get situated with the lua language, since this will not be covered here.</p>
+<h4 id="1-0-introduction-to-glua"><a class="header-link" href="#1-0-introduction-to-glua"></a>1.0 - Introduction to GLua</h4>
+<hr>
+<p>In GLua, developers will most likely be using hooks to run code. Hooks are one of the most essential part of Garry&#39;s Mod&#39;s API, as they can be used to do many things revolving around specific events. The usual hooks that will be used are going to be GAMEMODE hooks since they are a crucial part of the game experience in every gamemode. There will be many places where developers will need gamemode-specific hooks - such as sandbox&#39;s <code>CanTool</code> hook for suppressing specific tools for some user groups. </p>
+<p>However there are other ways to run code other than hooks; console commands, and file loads are also important places where code will run. Console commands will mostly be used for debugging and configs and file loading will be important to setting up the rest of the code.</p>
+<p>When none of these situation can solve a problem, detouring comes into play. Detouring is a powerful, but should be the last resort for any situation.</p>
+<h4 id="1-1-the-hook-library"><a class="header-link" href="#1-1-the-hook-library"></a>1.1 - The hook library</h4>
+<hr>
+<p>The hook library is one of the most powerful tools in Garry&#39;s Mod. You can debug with it, modify what happens, setup later code, or even reset your own code.</p>
+<h5 id="adding-hooks"><a class="header-link" href="#adding-hooks"></a>Adding hooks</h5>
+<p>The function in the <code>hook</code> library that will be used most often is <code>hook.Add</code>. This function adds another function to be called when a specific event is fired. An example use-case is for logging when a player has died:</p>
+<pre class="hljs"><code>hook.Add(<span class="hljs-string">"PlayerDeath"</span>, <span class="hljs-string">"print when a player dies"</span>, <span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">(victim, inflictor, attacker)</span></span>
+    <span class="hljs-built_in">print</span>(victim:Nick()..<span class="hljs-string">" has died!"</span>)
+<span class="hljs-keyword">end</span>)</code></pre><p>This example adds a function to be executed when <code>PlayerDeath</code> has been fired under the identifier <code>print when a player dies</code>. When the event has been fired it will print <code>$victimname has died!</code> to the console.</p>
+<h5 id="removing-hooks"><a class="header-link" href="#removing-hooks"></a>Removing hooks</h5>
+<p>When a hook will not be needed any longer (such as unloading an addon), it should be removed with <code>hook.Remove</code>.</p>
+<h5 id="references"><a class="header-link" href="#references"></a>References</h5>
+<hr>
+<ol class="list">
+<li><a href="http://wiki.garrysmod.com">http://wiki.garrysmod.com</a></li>
+</ol>
+    </article>
+  </body>
+</html>

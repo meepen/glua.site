@@ -1,0 +1,5 @@
+git add src/*
+git commit
+./generate
+git add --all .
+git commit -m "Regenerate preprocessed markdown"
