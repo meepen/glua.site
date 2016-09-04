@@ -11,7 +11,9 @@ Section 0 - \`The Point\`
 
 Section 1 - \`Introductions\`
 -  1.0 - \`Introduction to basic Garry's Mod Lua\`
--  1.1 - \`The hook library\`  
+-  1.1 - \`The hook library\`
+-  1.2 - \`Server and Client\`
+-  1.3 - \`Networking\`
 
 
 
@@ -32,7 +34,7 @@ In GLua, developers will most likely be using hooks to run code. Hooks are one o
 
 However there are other ways to run code other than hooks; console commands, and file loads are also important places where code will run. Console commands will mostly be used for debugging and configs and file loading will be important to setting up the rest of the code.
 
-When none of these situation can solve a problem, detouring comes into play. Detouring is a powerful, but should be the last resort for any situation.
+When none of these situation can solve a problem, detouring comes into play. Detouring is powerful, but should be the last resort for any situation.
 
 #### 1.1 - The hook library
 ---------------------------
@@ -69,9 +71,67 @@ hook.Remove("PlayerDeath", "print when a player dies")
 ```
 
 ##### Finding hooks
-Finding hooks is essential to debugging, you can find why a hook won't run by looking at the source of the other hooks in the same event. Sometimes you may even use it to detour some of the hooks in an event to easily get your code to do something the way you want.
+Finding hooks is essential to debugging, you can find why a hook won't run by looking at the source of the other hooks in the same event. Sometimes you may even use it to detour some of the hooks in an event to easily get your code to do something the way you want. `hook.GetTable()` returns a table with structure like:
+```lua
+{
+    PlayerDeath = {
+        ["print when a player dies"] = function: 0x178c870
+    }
+}
+```
 
+#### 1.2 - Server and Client
+--------------------------
+There are two states that developers will need to be aware of. Server state is the state that is only on the server. The code that is run on the server is only available on the server, along with all the variable that it creates. On the other side there is the client state, which is only available on the client.
 
+There are events that are only ran in one state, and some hooks that are ran in both states. For events that are only ran on the server but you need to do something on the client when it happens you will need to network some data. Read the \`Networking\` section for more information.
+
+##### SERVER and CLIENT variables
+This is fairly straight forward. `SERVER` is a global variable that will be set to `true` on server and `false` on client. Likewise `CLIENT` is a global variable that will be set to `false` on server and `true` on client.
+
+##### The shared pseudo-state
+Shared is when a file is ran on both client and server. This happens when you include it on server and network it to the clients with `AddCSLuaFile` and making the client state include it as well.
+```lua
+concommand.Add("dosomething_"..(SERVER and "sv" or "cl"), print)
+```
+
+##### Prediction
+As mentioned above, there are some events that are ran on both server and client. Some of these events are predicted, meaning that the client predicts what will happen on the server state and mimics it on the client state for seamless gameplay. This happens because it helps reduce the effects of ping when playing the game.  
+For example, the `VehicleMove` hook is ran on client when in a vehicle, and on server when any client is in a vehicle. In these hooks you will want to avoid using any non-predicted variables in predicted hooks such as these, as it will cause prediction errors.  
+What not to do:
+```lua
+local waittime = 3.5
+hook.Add("VehicleMove", "limit jumping", function(ply, mv)
+    ply.LastJump = ply.LastJump or CurTime() - waittime
+    local hit_jump = not mv:WasKeyDown(IN_JUMP) and mv:KeyDown(IN_JUMP)
+    if (hit_jump and CurTime() - ply.LastJump < waittime) then
+        mv:SetButtons(bit.band(bit.bnot(IN_JUMP), mv:GetButtons()))
+    elseif (hit_jump) then
+        ply.LastJump = CurTime()
+    end
+end)
+```
+What to do:
+```lua
+AddCSLuaFile() -- have it on client and server for prediction!
+local waittime = 3.5
+hook.Add("VehicleMove", "limit jumping", function(ply, mv)
+    local LastJump = ply:GetNW2Float("LastJump", CurTime() - 3.5) 
+    -- predicted network variable
+    -- it's not documented since it will eventually replace GetNW*
+    -- default to CurTime() - 3.5
+    
+    local hit_jump = not mv:WasKeyDown(IN_JUMP) and mv:KeyDown(IN_JUMP)
+    if (hit_jump and CurTime() - LastJump < waittime) then
+        mv:SetButtons(bit.band(bit.bnot(IN_JUMP), mv:GetButtons()))
+    elseif (hit_jump) then
+        ply:SetNW2Float("LastJump", CurTime())
+    end
+end)
+```
+
+#### 1.3 - Networking
+---------------------
 
 ##### References
 ----------------
